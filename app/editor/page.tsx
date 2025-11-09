@@ -8,7 +8,7 @@ import { ExecutionResult } from "@/components/execution-result"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, Save, Play } from "lucide-react"
 
-const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
+const API_BASE = "https://alfredia-unriskable-shellie.ngrok-free.dev"
 
 interface ExecutionResultType {
   status: "success" | "error" | "running"
@@ -41,7 +41,6 @@ export default function EditorPage() {
   const [isRunning, setIsRunning] = useState(false)
   const [result, setResult] = useState<ExecutionResultType | undefined>(undefined)
   const [isSaving, setIsSaving] = useState(false)
-  const [currentSubmissionId, setCurrentSubmissionId] = useState<string>("")
 
   useEffect(() => {
     const userType = sessionStorage.getItem("userType")
@@ -60,29 +59,38 @@ export default function EditorPage() {
 
     setIsSaving(true)
     try {
-      const response = await fetch(`${API_BASE}/submissions`, {
+      const url = `${API_BASE}/submissions`
+      console.log("[v0] 코드 제출 API 요청 URL:", url)
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
-          assignment_id: "A1", // 과제 ID (필요시 동적으로 변경)
-          language: "python", // 언어 설정 (필요시 동적으로 변경)
+          assignment_id: "A1",
+          language: "python",
           code: code,
         }),
       })
 
+      console.log("[v0] 응답 상태:", response.status, response.statusText)
+
       if (!response.ok) {
-        throw new Error("코드 저장 실패")
+        const errorText = await response.text()
+        console.error("[v0] API 에러 응답:", errorText)
+        throw new Error(`코드 저장 실패: ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("[v0] API 응답:", data)
+      console.log("[v0] 코드 제출 API 응답:", data)
 
+      // SubmissionQueued: { submission_id, status, attempt, created_at }
       const newVersion: CodeVersion = {
         id: `v${versions.length + 1}`,
         code: code,
-        createdAt: new Date(),
+        createdAt: new Date(data.created_at || new Date()),
         result: result,
         submission_id: data.submission_id,
         apiStatus: data.status,
@@ -90,10 +98,10 @@ export default function EditorPage() {
       }
 
       setVersions([...versions, newVersion])
-      alert(`버전 저장 완료! (ID: ${data.submission_id}, 상태: ${data.status})`)
+      alert(`버전 저장 완료!\n제출 ID: ${data.submission_id}\n상태: ${data.status}`)
     } catch (error) {
       console.error("[v0] 코드 저장 오류:", error)
-      alert("코드 저장 중 오류가 발생했습니다.")
+      alert(`코드 저장 중 오류: ${error instanceof Error ? error.message : "알 수 없는 오류"}`)
     } finally {
       setIsSaving(false)
     }
@@ -105,14 +113,18 @@ export default function EditorPage() {
     setIsRunning(true)
     setResult({ status: "running" })
 
-    // 임시 모의 실행 결과 (runner.py 준비 후 실제 API로 교체 예정)
     setTimeout(() => {
       setResult({
         status: "success",
-        output: "코드 실행 성공! (임시 결과 - runner.py 준비 중)",
+        output: "임시 실행 결과입니다.\nrunner.py가 준비되면 실제 채점 결과가 표시됩니다.",
         score: 0,
         failTags: [],
-        feedback: [{ case: "임시", message: "runner.py가 준비되면 실제 채점 결과가 표시됩니다." }],
+        feedback: [
+          {
+            case: "임시 테스트",
+            message: "runner.py K8s 환경이 준비되면 실제 채점 피드백이 제공됩니다.",
+          },
+        ],
         executionTime: 0,
         metrics: {
           timeMs: 0,
@@ -120,7 +132,7 @@ export default function EditorPage() {
         },
       })
       setIsRunning(false)
-    }, 1000)
+    }, 1500)
   }
 
   const handleSubmit = () => {
@@ -132,14 +144,12 @@ export default function EditorPage() {
       <Navbar userName={userName} userType="student" />
 
       <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
         <div className="mb-6">
           <h2 className="text-3xl font-bold text-foreground mb-2">코드 작성 및 실습</h2>
           <p className="text-muted-foreground">아래에서 코드를 작성하고 즉시 실행 결과를 확인하세요.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Code Editor Section */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
               <div className="bg-secondary p-4 border-b border-border">
@@ -148,7 +158,6 @@ export default function EditorPage() {
               <CodeEditor value={code} onChange={setCode} />
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-3">
               <Button
                 onClick={handleRunCode}
@@ -177,9 +186,7 @@ export default function EditorPage() {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-4">
-            {/* Execution Result */}
             <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
               <div className="bg-secondary p-4 border-b border-border">
                 <h3 className="text-lg font-semibold text-foreground">실행 결과</h3>
@@ -187,7 +194,6 @@ export default function EditorPage() {
               <ExecutionResult result={result} />
             </div>
 
-            {/* Versions List */}
             <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
               <div className="bg-secondary p-4 border-b border-border">
                 <h3 className="text-lg font-semibold text-foreground">저장된 버전</h3>

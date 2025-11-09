@@ -6,7 +6,7 @@ import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, ChevronLeft } from "lucide-react"
 
-const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
+const API_BASE = "https://alfredia-unriskable-shellie.ngrok-free.dev"
 
 export default function ConfirmationPage() {
   const router = useRouter()
@@ -29,6 +29,12 @@ export default function ConfirmationPage() {
 
     setUserName(name || "학생")
     setSubmissionId(id || "")
+
+    // URL에 submissionId가 있다면 이미 제출된 것으로 간주
+    if (id) {
+      setSubmitted(true)
+      setSubmissionTime(new Date())
+    }
   }, [router, searchParams])
 
   const handleConfirmSubmission = async () => {
@@ -40,6 +46,7 @@ export default function ConfirmationPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           note: "최종본 확정",
@@ -51,7 +58,7 @@ export default function ConfirmationPage() {
       }
 
       const data = await response.json()
-      console.log("[v0] 최종 제출 확정:", data)
+      console.log("[v0] 최종 제출 확정 API 응답:", data)
 
       setSubmitted(true)
       setSubmissionTime(new Date())
