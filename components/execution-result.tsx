@@ -1,13 +1,19 @@
 "use client"
 
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
+import { CheckCircle2, AlertCircle, Loader2, Clock, Database } from "lucide-react"
 
 interface ExecutionResultProps {
   result?: {
     status: "success" | "error" | "running"
     output?: string
     executionTime?: number
-    feedback?: string
+    feedback?: { case: string; message: string }[]
+    score?: number
+    failTags?: string[]
+    metrics?: {
+      timeMs: number
+      memoryMB: number
+    }
   }
 }
 
@@ -43,23 +49,55 @@ export function ExecutionResult({ result }: ExecutionResultProps) {
         </div>
       )}
 
+      {result.score !== undefined && (
+        <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+          <p className="text-sm font-semibold text-primary">점수: {result.score}점</p>
+        </div>
+      )}
+
       <div className="bg-background rounded p-3 border border-border text-xs font-mono max-h-32 overflow-y-auto">
         <pre className="text-foreground whitespace-pre-wrap break-words">{result.output}</pre>
       </div>
 
-      {result.executionTime && (
-        <p className="text-xs text-muted-foreground">실행 시간: {result.executionTime.toFixed(2)}ms</p>
+      {result.metrics && (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="flex items-center gap-2 bg-muted p-2 rounded">
+            <Clock size={14} className="text-muted-foreground" />
+            <span className="text-muted-foreground">실행 시간: {result.metrics.timeMs}ms</span>
+          </div>
+          <div className="flex items-center gap-2 bg-muted p-2 rounded">
+            <Database size={14} className="text-muted-foreground" />
+            <span className="text-muted-foreground">메모리: {result.metrics.memoryMB}MB</span>
+          </div>
+        </div>
       )}
 
-      {result.feedback && (
+      {result.failTags && result.failTags.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-red-700">오류 태그:</p>
+          <div className="flex flex-wrap gap-2">
+            {result.failTags.map((tag, idx) => (
+              <span key={idx} className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {result.feedback && result.feedback.length > 0 && (
         <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full"></div>
-            <span className="text-xs font-semibold text-blue-900 dark:text-blue-200">AI 피드백</span>
+            <span className="text-xs font-semibold text-blue-900 dark:text-blue-200">채점 피드백</span>
           </div>
-          <p className="text-xs text-blue-800 dark:text-blue-100 leading-relaxed whitespace-pre-wrap">
-            {result.feedback}
-          </p>
+          <div className="space-y-2">
+            {result.feedback.map((fb, idx) => (
+              <div key={idx} className="text-xs text-blue-800 dark:text-blue-100">
+                <span className="font-semibold">{fb.case}:</span> {fb.message}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

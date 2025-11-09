@@ -6,6 +6,8 @@ import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, ChevronLeft } from "lucide-react"
 
+const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
+
 export default function ConfirmationPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -13,6 +15,7 @@ export default function ConfirmationPage() {
   const [submissionId, setSubmissionId] = useState("")
   const [submitted, setSubmitted] = useState(false)
   const [submissionTime, setSubmissionTime] = useState<Date | null>(null)
+  const [isConfirming, setIsConfirming] = useState(false)
 
   useEffect(() => {
     const userType = sessionStorage.getItem("userType")
@@ -28,9 +31,36 @@ export default function ConfirmationPage() {
     setSubmissionId(id || "")
   }, [router, searchParams])
 
-  const handleConfirmSubmission = () => {
-    setSubmitted(true)
-    setSubmissionTime(new Date())
+  const handleConfirmSubmission = async () => {
+    if (!submissionId) return
+
+    setIsConfirming(true)
+    try {
+      const response = await fetch(`${API_BASE}/submissions/${submissionId}/finalize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          note: "최종본 확정",
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("최종 제출 확정 실패")
+      }
+
+      const data = await response.json()
+      console.log("[v0] 최종 제출 확정:", data)
+
+      setSubmitted(true)
+      setSubmissionTime(new Date())
+    } catch (error) {
+      console.error("[v0] 최종 제출 확정 오류:", error)
+      alert("최종 제출 중 오류가 발생했습니다.")
+    } finally {
+      setIsConfirming(false)
+    }
   }
 
   if (submitted) {
@@ -56,8 +86,8 @@ export default function ConfirmationPage() {
                   <span className="font-semibold text-foreground">{userName}</span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-border">
-                  <span className="text-muted-foreground">제출 버전:</span>
-                  <span className="font-semibold text-foreground">{submissionId}</span>
+                  <span className="text-muted-foreground">제출 ID:</span>
+                  <span className="font-semibold text-foreground font-mono text-sm">{submissionId}</span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-border">
                   <span className="text-muted-foreground">제출 시간:</span>
@@ -66,7 +96,7 @@ export default function ConfirmationPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">상태:</span>
                   <span className="px-4 py-1 bg-green-100 text-green-700 rounded-full font-semibold text-sm">
-                    제출됨
+                    제출 완료
                   </span>
                 </div>
               </div>
@@ -154,9 +184,10 @@ export default function ConfirmationPage() {
           </Button>
           <Button
             onClick={handleConfirmSubmission}
+            disabled={isConfirming}
             className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold"
           >
-            최종 제출하기
+            {isConfirming ? "제출 중..." : "최종 제출하기"}
           </Button>
         </div>
       </div>

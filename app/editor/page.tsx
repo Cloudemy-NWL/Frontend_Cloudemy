@@ -8,16 +8,29 @@ import { ExecutionResult } from "@/components/execution-result"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, Save, Play } from "lucide-react"
 
+const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
+
+interface ExecutionResultType {
+  status: "success" | "error" | "running"
+  output?: string
+  executionTime?: number
+  feedback?: { case: string; message: string }[]
+  score?: number
+  failTags?: string[]
+  metrics?: {
+    timeMs: number
+    memoryMB: number
+  }
+}
+
 interface CodeVersion {
   id: string
   code: string
   createdAt: Date
-  result?: {
-    status: "success" | "error" | "running"
-    output?: string
-    executionTime?: number
-    feedback?: string
-  }
+  result?: ExecutionResultType
+  submission_id?: string
+  apiStatus?: string
+  attempt?: number
 }
 
 export default function EditorPage() {
@@ -26,8 +39,9 @@ export default function EditorPage() {
   const [code, setCode] = useState("")
   const [versions, setVersions] = useState<CodeVersion[]>([])
   const [isRunning, setIsRunning] = useState(false)
-  const [result, setResult] = useState<CodeVersion["result"]>()
-  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false)
+  const [result, setResult] = useState<ExecutionResultType | undefined>(undefined)
+  const [isSaving, setIsSaving] = useState(false)
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string>("")
 
   useEffect(() => {
     const userType = sessionStorage.getItem("userType")
@@ -41,74 +55,76 @@ export default function EditorPage() {
     setUserName(name || "학생")
   }, [router])
 
-  const handleSaveCode = () => {
-    const newVersion: CodeVersion = {
-      id: `v${versions.length + 1}`,
-      code: code,
-      createdAt: new Date(),
-      result: result,
-    }
-    setVersions([...versions, newVersion])
-  }
+  const handleSaveCode = async () => {
+    if (!code.trim()) return
 
-  const fetchFeedback = async (code: string, output: string, status: string) => {
+    setIsSaving(true)
     try {
-      setIsFeedbackLoading(true)
-      const response = await fetch("/api/code/feedback", {
+      const response = await fetch(`${API_BASE}/submissions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, output, status }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          assignment_id: "A1", // 과제 ID (필요시 동적으로 변경)
+          language: "python", // 언어 설정 (필요시 동적으로 변경)
+          code: code,
+        }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        return data.feedback
+      if (!response.ok) {
+        throw new Error("코드 저장 실패")
       }
+
+      const data = await response.json()
+      console.log("[v0] API 응답:", data)
+
+      const newVersion: CodeVersion = {
+        id: `v${versions.length + 1}`,
+        code: code,
+        createdAt: new Date(),
+        result: result,
+        submission_id: data.submission_id,
+        apiStatus: data.status,
+        attempt: data.attempt,
+      }
+
+      setVersions([...versions, newVersion])
+      alert(`버전 저장 완료! (ID: ${data.submission_id}, 상태: ${data.status})`)
     } catch (error) {
-      console.error("피드백 요청 실패:", error)
+      console.error("[v0] 코드 저장 오류:", error)
+      alert("코드 저장 중 오류가 발생했습니다.")
     } finally {
-      setIsFeedbackLoading(false)
+      setIsSaving(false)
     }
-    return null
   }
 
   const handleRunCode = async () => {
+    if (!code.trim()) return
+
     setIsRunning(true)
     setResult({ status: "running" })
 
-    setTimeout(async () => {
-      try {
-        // eslint-disable-next-line no-eval
-        const output = eval(code)
-        const outputStr = String(output)
-
-        const feedback = await fetchFeedback(code, outputStr, "success")
-
-        setResult({
-          status: "success",
-          output: outputStr,
-          executionTime: Math.random() * 1000,
-          feedback: feedback || undefined,
-        })
-      } catch (error) {
-        const errorMsg = (error as Error).message
-
-        const feedback = await fetchFeedback(code, errorMsg, "error")
-
-        setResult({
-          status: "error",
-          output: errorMsg,
-          feedback: feedback || undefined,
-        })
-      }
+    // 임시 모의 실행 결과 (runner.py 준비 후 실제 API로 교체 예정)
+    setTimeout(() => {
+      setResult({
+        status: "success",
+        output: "코드 실행 성공! (임시 결과 - runner.py 준비 중)",
+        score: 0,
+        failTags: [],
+        feedback: [{ case: "임시", message: "runner.py가 준비되면 실제 채점 결과가 표시됩니다." }],
+        executionTime: 0,
+        metrics: {
+          timeMs: 0,
+          memoryMB: 0,
+        },
+      })
       setIsRunning(false)
-    }, 800)
+    }, 1000)
   }
 
   const handleSubmit = () => {
-    if (code.trim()) {
-      handleSaveCode()
-    }
+    handleSaveCode()
   }
 
   return (
@@ -144,12 +160,12 @@ export default function EditorPage() {
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={!code.trim()}
+                disabled={!code.trim() || isSaving}
                 variant="outline"
                 className="flex items-center gap-2 border-border text-foreground hover:bg-muted bg-transparent"
               >
                 <Save size={18} />
-                버전 저장
+                {isSaving ? "저장 중..." : "버전 저장"}
               </Button>
               <Button
                 onClick={() => router.push("/submissions")}
@@ -167,7 +183,6 @@ export default function EditorPage() {
             <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
               <div className="bg-secondary p-4 border-b border-border">
                 <h3 className="text-lg font-semibold text-foreground">실행 결과</h3>
-                {isFeedbackLoading && <p className="text-xs text-muted-foreground mt-1">피드백 생성 중...</p>}
               </div>
               <ExecutionResult result={result} />
             </div>
@@ -192,6 +207,11 @@ export default function EditorPage() {
                         <span className="text-xs text-muted-foreground">{version.createdAt.toLocaleTimeString()}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 truncate">{version.code.split("\n")[0]}</p>
+                      {version.submission_id && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          제출 ID: {version.submission_id} | 상태: {version.apiStatus}
+                        </p>
+                      )}
                     </div>
                   ))
                 )}
