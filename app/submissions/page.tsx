@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, Check, FileText, Clock } from "lucide-react"
+import { ChevronLeft, Check, Clock } from "lucide-react"
 
 interface SubmissionListItem {
   submission_id: string
@@ -150,6 +150,21 @@ export default function SubmissionsPage() {
     }
   }
 
+  const formatKoreanTime = (isoString: string) => {
+    const date = new Date(isoString)
+    // UTC 시간을 한국 시간(UTC+9)으로 변환
+    const koreanTime = new Date(date.getTime() + 9 * 60 * 60 * 1000)
+    return koreanTime.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    })
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -213,7 +228,7 @@ export default function SubmissionsPage() {
                           </h4>
                           <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                             <Clock size={14} />
-                            {new Date(submission.created_at).toLocaleString()}
+                            {formatKoreanTime(submission.created_at)}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1 font-mono">ID: {submission.submission_id}</p>
                         </div>
@@ -239,19 +254,7 @@ export default function SubmissionsPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex gap-2">
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleSelectSubmission(submission.submission_id)
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="border-border text-foreground hover:bg-muted flex-1"
-                        >
-                          <FileText size={16} className="mr-1" />
-                          자세히 보기
-                        </Button>
+                      <div className="mt-4">
                         <Button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -259,7 +262,7 @@ export default function SubmissionsPage() {
                           }}
                           disabled={finalizedId === submission.submission_id || submission.status === "FINALIZED"}
                           size="sm"
-                          className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 disabled:opacity-50"
+                          className="bg-primary text-primary-foreground hover:bg-primary/90 w-full disabled:opacity-50"
                         >
                           {submission.status === "FINALIZED" || finalizedId === submission.submission_id
                             ? "제출 완료"
@@ -274,98 +277,6 @@ export default function SubmissionsPage() {
           </div>
 
           <div className="space-y-4">
-            {showDetails && selectedSubmission && (
-              <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden sticky top-6">
-                <div className="bg-secondary p-4 border-b border-border">
-                  <h3 className="text-lg font-semibold text-foreground">제출 상세 정보</h3>
-                </div>
-                <div className="p-4 space-y-3">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">제출 ID:</span>
-                      <span className="text-foreground font-mono text-xs">{selectedSubmission.submission_id}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">과제 ID:</span>
-                      <span className="text-foreground">{selectedSubmission.assignment_id}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">언어:</span>
-                      <span className="text-foreground">{selectedSubmission.language}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">상태:</span>
-                      <span
-                        className={
-                          selectedSubmission.status === "COMPLETED" || selectedSubmission.status === "SUCCESSED"
-                            ? "text-green-600 font-medium"
-                            : selectedSubmission.status === "FAILED"
-                              ? "text-red-600 font-medium"
-                              : "text-yellow-600 font-medium"
-                        }
-                      >
-                        {selectedSubmission.status}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">점수:</span>
-                      <span className="text-primary font-semibold">{selectedSubmission.score}점</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">생성 시간:</span>
-                      <span className="text-foreground text-xs">
-                        {new Date(selectedSubmission.created_at).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">최종 제출:</span>
-                      <span className={selectedSubmission.finalized ? "text-green-600" : "text-muted-foreground"}>
-                        {selectedSubmission.finalized ? "완료" : "미완료"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {selectedSubmission.metrics && (
-                    <div className="bg-muted rounded p-3 space-y-1">
-                      <p className="text-xs font-semibold text-foreground mb-2">실행 메트릭스</p>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">실행 시간:</span>
-                        <span className="text-foreground">{selectedSubmission.metrics.timeMs}ms</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">메모리:</span>
-                        <span className="text-foreground">{selectedSubmission.metrics.memoryMB}MB</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedSubmission.fail_tags && selectedSubmission.fail_tags.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-red-700">오류 태그:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedSubmission.fail_tags.map((tag, idx) => (
-                          <span key={idx} className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedSubmission.feedback && selectedSubmission.feedback.length > 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded p-3 space-y-2 mt-3">
-                      <p className="text-xs font-semibold text-blue-900">채점 피드백:</p>
-                      {selectedSubmission.feedback.map((fb, idx) => (
-                        <p key={idx} className="text-xs text-blue-800">
-                          <span className="font-semibold">{fb.case}:</span> {fb.message}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {finalizedId && (
               <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
                 <h4 className="font-semibold text-primary mb-2">최종 제출 완료</h4>
