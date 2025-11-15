@@ -38,7 +38,7 @@ interface SubmissionDetail {
   created_at: string
 }
 
-const API_BASE = "https://alfredia-unriskable-shellie.ngrok-free.dev"
+const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
 
 export default function SubmissionsPage() {
   const router = useRouter()

@@ -6,7 +6,7 @@ import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, ChevronLeft } from "lucide-react"
 
-const API_BASE = "https://alfredia-unriskable-shellie.ngrok-free.dev"
+const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
 
 export default function ConfirmationPage() {
   const router = useRouter()

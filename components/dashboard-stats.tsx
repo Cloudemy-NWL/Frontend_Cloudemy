@@ -1,28 +1,28 @@
 "use client"
 
-import { Users, CheckCircle2, AlertCircle } from "lucide-react"
+import { Users, CheckCircle2, AlertCircle } from 'lucide-react'
 
 export function DashboardStats() {
   const stats = [
     {
       title: "총 학생 수",
-      value: "42",
+      value: "31",
       icon: Users,
       bgColor: "bg-blue-100",
       iconColor: "text-blue-600",
     },
     {
       title: "제출 완료",
-      value: "38",
-      subtext: "90.5%",
+      value: "30",
+      subtext: "96.8%",
       icon: CheckCircle2,
       bgColor: "bg-green-100",
       iconColor: "text-green-600",
     },
     {
       title: "미제출",
-      value: "4",
-      subtext: "9.5%",
+      value: "1",
+      subtext: "3.2%",
       icon: AlertCircle,
       bgColor: "bg-red-100",
       iconColor: "text-red-600",

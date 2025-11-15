@@ -1,14 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Navbar } from "@/components/navbar"
 import { CodeEditor } from "@/components/code-editor"
 import { ExecutionResult } from "@/components/execution-result"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, Save, Play } from "lucide-react"
+import { ChevronRight, Save, Play, BookOpen } from 'lucide-react'
 
-const API_BASE = "https://alfredia-unriskable-shellie.ngrok-free.dev"
+const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
 
 interface ExecutionResultType {
   status: "success" | "error" | "running"
@@ -41,6 +41,7 @@ export default function EditorPage() {
   const [isRunning, setIsRunning] = useState(false)
   const [result, setResult] = useState<ExecutionResultType | undefined>(undefined)
   const [isSaving, setIsSaving] = useState(false)
+  const [assignmentDescription, setAssignmentDescription] = useState("")
 
   useEffect(() => {
     const userType = sessionStorage.getItem("userType")
@@ -52,6 +53,11 @@ export default function EditorPage() {
     }
 
     setUserName(name || "학생")
+
+    const savedDescription = localStorage.getItem("assignmentDescription")
+    if (savedDescription) {
+      setAssignmentDescription(savedDescription)
+    }
   }, [router])
 
   const handleSaveCode = async () => {
@@ -86,7 +92,6 @@ export default function EditorPage() {
       const data = await response.json()
       console.log("[v0] 코드 제출 API 응답:", data)
 
-      // SubmissionQueued: { submission_id, status, attempt, created_at }
       const newVersion: CodeVersion = {
         id: `v${versions.length + 1}`,
         code: code,
@@ -113,26 +118,87 @@ export default function EditorPage() {
     setIsRunning(true)
     setResult({ status: "running" })
 
-    setTimeout(() => {
-      setResult({
-        status: "success",
-        output: "임시 실행 결과입니다.\nrunner.py가 준비되면 실제 채점 결과가 표시됩니다.",
-        score: 0,
-        failTags: [],
-        feedback: [
-          {
-            case: "임시 테스트",
-            message: "runner.py K8s 환경이 준비되면 실제 채점 피드백이 제공됩니다.",
-          },
-        ],
-        executionTime: 0,
-        metrics: {
-          timeMs: 0,
-          memoryMB: 0,
+    try {
+      const submitResponse = await fetch(`${API_BASE}/submissions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
+        body: JSON.stringify({
+          language: "python",
+          code: code,
+        }),
+      })
+
+      if (!submitResponse.ok) {
+        throw new Error(`코드 제출 실패: ${submitResponse.status}`)
+      }
+
+      const submitData = await submitResponse.json()
+      const submissionId = submitData.submission_id
+
+      console.log("[v0] 코드 실행 제출 완료:", submissionId)
+
+      const maxAttempts = 30
+      let attempts = 0
+
+      const pollResult = async () => {
+        attempts++
+
+        const resultResponse = await fetch(`${API_BASE}/submissions/${submissionId}`, {
+          method: "GET",
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        })
+
+        if (!resultResponse.ok) {
+          throw new Error(`결과 조회 실패: ${resultResponse.status}`)
+        }
+
+        const resultData = await resultResponse.json()
+        console.log("[v0] 코드 실행 결과 조회:", resultData)
+
+        if (
+          resultData.status === "COMPLETED" ||
+          resultData.status === "FAILED" ||
+          resultData.status === "TIMEOUT" ||
+          resultData.status === "SUCCESSED"
+        ) {
+          setResult({
+            status: resultData.status === "FAILED" || resultData.status === "TIMEOUT" ? "error" : "success",
+            output: resultData.status === "FAILED" ? "코드 실행 실패" : "코드 실행 성공",
+            score: resultData.score,
+            failTags: resultData.fail_tags,
+            feedback: resultData.feedback,
+            executionTime: resultData.metrics?.timeMs,
+            metrics: resultData.metrics,
+          })
+          setIsRunning(false)
+          return
+        }
+
+        if (attempts < maxAttempts) {
+          setTimeout(() => pollResult(), 1000)
+        } else {
+          setResult({
+            status: "error",
+            output: "채점 시간 초과. 나중에 다시 시도해주세요.",
+          })
+          setIsRunning(false)
+        }
+      }
+
+      await pollResult()
+    } catch (error) {
+      console.error("[v0] 코드 실행 오류:", error)
+      setResult({
+        status: "error",
+        output: `코드 실행 중 오류: ${error instanceof Error ? error.message : "알 수 없는 오류"}`,
       })
       setIsRunning(false)
-    }, 1500)
+    }
   }
 
   const handleSubmit = () => {
@@ -148,6 +214,18 @@ export default function EditorPage() {
           <h2 className="text-3xl font-bold text-foreground mb-2">코드 작성 및 실습</h2>
           <p className="text-muted-foreground">아래에서 코드를 작성하고 즉시 실행 결과를 확인하세요.</p>
         </div>
+
+        {assignmentDescription && (
+          <div className="mb-6 bg-card border border-border rounded-lg shadow-sm overflow-hidden">
+            <div className="bg-primary/10 p-4 border-b border-border flex items-center gap-2">
+              <BookOpen size={20} className="text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">과제 설명</h3>
+            </div>
+            <div className="p-4">
+              <p className="text-foreground whitespace-pre-wrap">{assignmentDescription}</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
