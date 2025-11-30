@@ -6,7 +6,7 @@ import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, ChevronLeft } from "lucide-react"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api"
 
 export default function ConfirmationPage() {
   const router = useRouter()

@@ -38,7 +38,7 @@ interface SubmissionDetail {
   created_at: string
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api"
 
 export default function SubmissionsPage() {
   const router = useRouter()
