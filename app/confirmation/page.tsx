@@ -6,7 +6,7 @@ import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, ChevronLeft } from "lucide-react"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api"
 
 export default function ConfirmationPage() {
   const router = useRouter()
@@ -46,7 +46,6 @@ export default function ConfirmationPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           note: "최종본 확정",

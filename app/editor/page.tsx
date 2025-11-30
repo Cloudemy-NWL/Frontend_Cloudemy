@@ -8,7 +8,7 @@ import { ExecutionResult } from "@/components/execution-result"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, Save, Play, BookOpen } from "lucide-react"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api"
 
 interface ExecutionResultType {
   status: "success" | "error" | "running"
@@ -72,7 +72,6 @@ export default function EditorPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           assignment_id: "A1",
@@ -123,7 +122,6 @@ export default function EditorPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           language: "python",
@@ -149,7 +147,7 @@ export default function EditorPage() {
         const resultResponse = await fetch(`${API_BASE}/submissions/${submissionId}`, {
           method: "GET",
           headers: {
-            "ngrok-skip-browser-warning": "true",
+            "Content-Type": "application/json",
           },
         })
 

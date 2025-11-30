@@ -38,7 +38,7 @@ interface SubmissionDetail {
   created_at: string
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api"
 
 export default function SubmissionsPage() {
   const router = useRouter()
@@ -72,7 +72,6 @@ export default function SubmissionsPage() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
         },
       })
 
@@ -101,7 +100,7 @@ export default function SubmissionsPage() {
     try {
       const response = await fetch(`${API_BASE}/submissions/${id}`, {
         headers: {
-          "ngrok-skip-browser-warning": "true",
+          "Content-Type": "application/json",
         },
       })
 
@@ -126,7 +125,6 @@ export default function SubmissionsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           note: "최종본 확정",
