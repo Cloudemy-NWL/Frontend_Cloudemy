@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
 # 패키지 매니저 파일 복사 및 의존성 설치
 # 패키지 파일이 변경되지 않으면 캐시 활용
 COPY package.json package-lock.json* ./
