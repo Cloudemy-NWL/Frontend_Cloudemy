@@ -38,7 +38,7 @@ interface SubmissionDetail {
   created_at: string
 }
 
-const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
 export default function SubmissionsPage() {
   const router = useRouter()
@@ -146,7 +146,7 @@ export default function SubmissionsPage() {
       router.push(`/confirmation?submissionId=${submissionId}`)
     } catch (error) {
       console.error("[v0] 최종 제출 확정 오류:", error)
-      alert("이미 최종 제출 완료되었습니다.")
+      alert("최종 제출 중 오류가 발생했습니다.")
     }
   }
 

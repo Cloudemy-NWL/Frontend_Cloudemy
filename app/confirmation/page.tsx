@@ -6,7 +6,7 @@ import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, ChevronLeft } from "lucide-react"
 
-const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
 export default function ConfirmationPage() {
   const router = useRouter()
@@ -107,10 +107,6 @@ export default function ConfirmationPage() {
                   </span>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800">조교 대시보드에서 현재 제출 현황을 확인할 수 있습니다.</p>
             </div>
 
             <div className="flex gap-4">

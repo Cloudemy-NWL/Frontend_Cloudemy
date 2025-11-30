@@ -1,14 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { CodeEditor } from "@/components/code-editor"
 import { ExecutionResult } from "@/components/execution-result"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, Save, Play, BookOpen } from 'lucide-react'
+import { ChevronRight, Save, Play, BookOpen } from "lucide-react"
 
-const API_BASE = "https://unfactional-harriett-multiscreen.ngrok-free.dev"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
 interface ExecutionResultType {
   status: "success" | "error" | "running"
